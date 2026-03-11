@@ -85,7 +85,7 @@ namespace Kiloview.Constants
     {
         public const string Login = ServiceEndpoints.Login;
         public const string Session = ServiceEndpoints.Session;
-        public const string GetPresetListInformation = Service.Preset + ServiceEndpoints.Get;
+        public const string GetDecodingStreamPresetListInformation = Service.Preset + ServiceEndpoints.Get;
         public const string GetDecodingStreamInformation = Service.Decode + ServiceEndpoints.Get;
         public const string GetSystemInformation = Service.System + ServiceEndpoints.GetSystemInformation;
         public const string SetDecodingPreset = Service.Decode + ServiceEndpoints.Add;
