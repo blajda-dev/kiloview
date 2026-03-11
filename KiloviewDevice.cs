@@ -31,6 +31,7 @@ namespace Kiloview
 
         private SystemInformation SystemInfo = new SystemInformation();
         private LoginInformation LoginInfo = new LoginInformation();
+        private List<DecodingStreamInformation> AvailableStreams = new List<DecodingStreamInformation>();
 
         private ushort requestedStreamID = 0;
        
@@ -335,7 +336,7 @@ namespace Kiloview
                 case Methods.GetSystemInformation:
                     SystemInformationResponse(response.Data);
                     break;
-                case Methods.GetPresetListInformation:
+                case Methods.GetDecodingStreamPresetListInformation:
                     DecodingStreamPresetListInformationResponse(response.Data);
                     break;
                 case Methods.GetDecodingStreamInformation:
@@ -372,6 +373,15 @@ namespace Kiloview
             try
             {
                 List<DecodingStreamPresetInformation> list = data.ToObject<List<DecodingStreamPresetInformation>>();
+
+                list.ForEach(stream =>
+                {
+                    if (stream.Name == this.ActualStreamName) 
+                    { 
+                        this.ActualStreamID = (ushort)stream.ID;
+                        CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Found Matching Name: {2} == {3} (Current Stream) -> Updating Actual Stream ID: {4}", this.SystemInfo.VersionInformation.Product, this.Host, stream.Name, this.ActualStreamName, this.ActualStreamID);
+                    }
+                });
             }
             catch (Exception e)
             {
@@ -645,7 +655,7 @@ namespace Kiloview
         private void GetDecodingStreamPresetList()
         {
             if (this.IsDebug) { CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Sending Get Decoding Stream Preset List Information Request", this.SystemInfo.VersionInformation.Product, this.Host); }
-            GenerateRequestJsonBody(Constants.URI.CodecDecoderPresetListInfo, Methods.GetPresetListInformation, Crestron.SimplSharp.Net.Https.RequestType.Get, new List<HttpsHeader>(), "");
+            GenerateRequestJsonBody(Constants.URI.CodecDecoderPresetListInfo, Methods.GetDecodingStreamPresetListInformation, Crestron.SimplSharp.Net.Https.RequestType.Get, new List<HttpsHeader>(), "");
         }
 
         public void RecallDecodingStreamPreset(ushort id)
