@@ -254,9 +254,9 @@ namespace Kiloview
             if (response != null)
             {
                 if (response.Code != 200) 
-                { 
-                    CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | HTTP CODE: {2}", this.SystemInfo.VersionInformation.Product, this.Host, response.Code);
-                    this.IsLoggedIn = false;
+                {
+                    if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | HTTP CODE: {2}", this.SystemInfo.VersionInformation.Product, this.Host, response.Code);
+                    if (response.Code == 401) { this.IsLoggedIn = false; }
                 }
 
                 if (response.HasContentLength)
