@@ -379,7 +379,7 @@ namespace Kiloview
                     if (stream.Name == this.ActualStreamName) 
                     { 
                         this.ActualStreamID = (ushort)stream.ID;
-                        CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Found Matching Name: {2} == {3} (Current Stream) -> Updating Actual Stream ID: {4}", this.SystemInfo.VersionInformation.Product, this.Host, stream.Name, this.ActualStreamName, this.ActualStreamID);
+                        if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Found Matching Name: {2} == {3} (Current Stream) -> Updating Actual Stream ID: {4}", this.SystemInfo.VersionInformation.Product, this.Host, stream.Name, this.ActualStreamName, this.ActualStreamID);
                     }
                 });
             }
