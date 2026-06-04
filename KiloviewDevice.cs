@@ -254,9 +254,9 @@ namespace Kiloview
             if (response != null)
             {
                 if (response.Code != 200) 
-                { 
-                    CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | HTTP CODE: {2}", this.SystemInfo.VersionInformation.Product, this.Host, response.Code);
-                    this.IsLoggedIn = false;
+                {
+                    if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | HTTP CODE: {2}", this.SystemInfo.VersionInformation.Product, this.Host, response.Code);
+                    if (response.Code == 401) { this.IsLoggedIn = false; }
                 }
 
                 if (response.HasContentLength)
@@ -379,7 +379,7 @@ namespace Kiloview
                     if (stream.Name == this.ActualStreamName) 
                     { 
                         this.ActualStreamID = (ushort)stream.ID;
-                        CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Found Matching Name: {2} == {3} (Current Stream) -> Updating Actual Stream ID: {4}", this.SystemInfo.VersionInformation.Product, this.Host, stream.Name, this.ActualStreamName, this.ActualStreamID);
+                        if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Found Matching Name: {2} == {3} (Current Stream) -> Updating Actual Stream ID: {4}", this.SystemInfo.VersionInformation.Product, this.Host, stream.Name, this.ActualStreamName, this.ActualStreamID);
                     }
                 });
             }
@@ -528,29 +528,40 @@ namespace Kiloview
                     this.IsDispatchInProgress = true;
                     if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Dispatch Request In Progress -> {2}", this.SystemInfo.VersionInformation.Product, this.Host, this.IsDispatchInProgress);
 
-                    Request request = this.PopRequestFromQueue(0);
-
-                    if (request != null)
+                    if (this.requestQueue.Count > 0)
                     {
-                        try
-                        {
-                            if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Dispatch Request -> {2}", this.SystemInfo.VersionInformation.Product, this.Host, request.WebRequest.Url);
-                            this.Client.DispatchAsyncEx(request.WebRequest, this.OnResponse, request.Method);
-                        }
-                        catch (Exception e)
-                        {
-                            if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Exception Encountered Dispatching Request -> {2} | {3}", this.SystemInfo.VersionInformation.Product, this.Host, request.WebRequest.Url, e.Message);
+                        Request request = this.PopRequestFromQueue(0);
 
+                        if (request != null)
+                        {
+                            try
+                            {
+                                bool requestIsLogin = (request.Method == Constants.Methods.Login || request.Method == Constants.Methods.Session);
+
+                                //we only want to let commands be sent if they are login/session requests OR if we are already logged in
+                                if (requestIsLogin || this.IsLoggedIn)
+                                {
+                                    if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Dispatch Request -> {2}", this.SystemInfo.VersionInformation.Product, this.Host, request.WebRequest.Url);
+                                    this.Client.DispatchAsyncEx(request.WebRequest, this.OnResponse, request.Method);
+                                }
+                                else { if (this.IsDebug) { CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Discaring Request -> IsLoggedIn {2} || Request Is Session OR Login Request {3}", this.SystemInfo.VersionInformation.Product, this.Host, this.IsLoggedIn, requestIsLogin); } }
+                            }
+                            catch (Exception e)
+                            {
+                                if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Exception Encountered Dispatching Request -> {2} | {3}", this.SystemInfo.VersionInformation.Product, this.Host, request.WebRequest.Url, e.Message);
+
+                                this.IsDispatchInProgress = false;
+                                if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Dispatch In Progress -> {2}", this.SystemInfo.VersionInformation.Product, this.Host, this.IsDispatchInProgress);
+                            }
+                        }
+                        else
+                        {
+                            if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Cannot Dispatch Null Request", this.SystemInfo.VersionInformation.Product, this.Host);
                             this.IsDispatchInProgress = false;
                             if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Dispatch In Progress -> {2}", this.SystemInfo.VersionInformation.Product, this.Host, this.IsDispatchInProgress);
                         }
                     }
-                    else 
-                    {
-                        if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Unable To Obtain Request", this.SystemInfo.VersionInformation.Product, this.Host);
-                        this.IsDispatchInProgress = false;
-                        if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Dispatch In Progress -> {2}", this.SystemInfo.VersionInformation.Product, this.Host, this.IsDispatchInProgress);
-                    }
+                    else { if (this.IsDebug) { CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Cannot Obtain Request From Empty Queue", this.SystemInfo.VersionInformation.Product, this.Host); } }
                 }
             }
             if (this.IsDebug) CrestronConsole.PrintLine("KILOVIEW {0} @ {1} | Release Lock On Request Queue", this.SystemInfo.VersionInformation.Product, this.Host);
